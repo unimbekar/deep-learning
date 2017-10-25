@@ -76,7 +76,7 @@ def main():
     if argv_len > 1 and sys.argv[1].isdigit():
         capture_rate = int(sys.argv[1])
 
-    cap = cv2.VideoCapture(0) #Use 0 for built-in camera. Use 1, 2, etc. for attached cameras.
+    cap = cv2.VideoCapture(1) #Use 0 for built-in camera. Use 1, 2, etc. for attached cameras.
     pool = Pool(processes=3)
 
     frame_count = 0
@@ -105,4 +105,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
