@@ -1,8 +1,3 @@
-# Copyright 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# Licensed under the Amazon Software License (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
-#     http://aws.amazon.com/asl/
-# or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions and limitations under the License.
-
 import urllib
 import sys
 import datetime
@@ -83,7 +78,7 @@ def main():
 
     if argv_len > 1:
         ip_cam_url = sys.argv[1]
-        
+
         if argv_len > 2 and sys.argv[2].isdigit():
             capture_rate = int(sys.argv[2])
     else:
@@ -92,7 +87,7 @@ def main():
 
     print("Capturing from '{}' at a rate of 1 every {} frames...".format(ip_cam_url, capture_rate))
     stream = urllib.urlopen(ip_cam_url)
-    
+
     bytes = ''
     pool = Pool(processes=3)
 
@@ -108,27 +103,27 @@ def main():
 
         if a != -1 and b != -1:
             #print 'Found JPEG markers. Start {}, End {}'.format(a,b)
-            
+
             frame_jpg_bytes = bytes[a:b+2]
             bytes = bytes[b+2:]
 
             if frame_count % capture_rate == 0:
-                
+
                 #You can perform any image pre-processing here using OpenCV2.
                 #Rotating image 90 degrees to the left:
                 nparr = np.fromstring(frame_jpg_bytes, dtype=np.uint8)
-                
+
                 #Simple and efficient rotation: 90 degrees left = flip + transpose
                 img_cv2_mat = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 rotated_img = cv2.transpose(cv2.flip(img_cv2_mat, 0))
-                
+
                 #Computationally-intensive rotation
                 # (h,w) = img_cv2_mat.shape[:2]
                 # center = (w/2, h/2)
 
                 # rot_mat = cv2.getRotationMatrix2D(center, -90, 1.0)
                 # rotated = cv2.warpAffine(img_cv2_mat, rot_mat, (w, h))
-                
+
                 retval, new_frame_jpg_bytes = cv2.imencode(".jpg", rotated_img)
 
                 #Send to Kinesis

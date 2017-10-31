@@ -1,15 +1,22 @@
 {
-	"s3_bucket" : "frame-images-bucket",
-	"s3_key_frames_root" : "frames/",
+	"s3_bucket"                 : "frame-images-bucket",
+	"s3_key_frames_root"        : "frames/",
 
-	"ddb_table" : "EnrichedFrame",
+	"ddb_table"                 : "EnrichedFrame",
 
-	"rekog_max_labels" : 123,
-    "rekog_min_conf" : 50.0,
+	"rekog_max_labels"          : 123,
+  "rekog_min_conf"            : 50.0,
 
-	"label_watch_list" : ["Human", "Pet", "Bag", "Toy"],
-	"label_watch_min_conf" : 90.0,
-	"label_watch_phone_num" : "",
+	"label_watch_list"          : ["Human", "Pet", "Bag", "Toy", "Cup", "Chair"],
+	"label_watch_min_conf"      : 90.0,
+	"label_watch_phone_num"     : "+17035999460",
 
-	"timezone" : "US/Eastern"
+	"timezone"                  : "US/Eastern",
+
+  "face_collection"           : "MyFaceTestCollection",
+  "person_watch_rekog_label"  : "Human",
+  "enable_person_watch"       : "True",
+	"search_max_faces"          : 1,
+	"face_match_threshold"      : 80,
+	"person_watch_list"         : ["UpenN", "John Smith", "Adam Clark", "Sanjeev Kumar", "Fred Baker"]
 }
