@@ -62,7 +62,7 @@ def process_image(event, context):
         frame_package_b64 = record['kinesis']['data']
         frame_package = cPickle.loads(base64.b64decode(frame_package_b64))
 
-        print('Frame (count)--> {}'.format(count))
+        print('Frame# {}'.format(count))
         img_bytes = frame_package["ImageBytes"]
         print('Image bytes size = {}'.format(len(img_bytes)))
         approx_capture_ts = frame_package["ApproximateCaptureTime"]
@@ -91,7 +91,6 @@ def process_image(event, context):
 
         #Iterate on rekognition labels...
         for label in rekog_response['Labels']:
-
             lbl = label['Name']
             conf = label['Confidence']
             label['OnWatchList'] = False
@@ -104,16 +103,15 @@ def process_image(event, context):
 
             #Check label watch list and trigger action
             if(label_watch_phone_num
-                and lbl.upper() in
-                    (label.upper() for label in label_watch_list)
-                and conf >= label_watch_min_conf):
+                and lbl.upper() in (label.upper() for label in label_watch_list)
+                and conf >= label_watch_min_conf
+                and lbl.upper() == 'HUMAN'):
 
-                label['OnWatchList'] = True
-
-                person_found = person_finder(rekog_client, img_bytes, config)
+                person_found = person_of_interest_finder(rekog_client, img_bytes, config)
                 print('Returned value of Person = {}'.format(person_found))
 
                 if person_found:
+                    label['OnWatchList'] = True
                     notification_txt = 'On {}, {} named {} was detected with %{} confidence.'.format(
                         now.strftime('%x %X %Z'),
                         lbl,
@@ -180,7 +178,7 @@ def convert_to_decimal(rekog_response):
         label['Confidence'] = decimal.Decimal(label['Confidence'])
         #print('Label: {}, Confidence: {}, Confidence(in Decimal): {}'.format(label['Name'], label['Confidence'], decimal.Decimal(label['Confidence'])))
 
-def person_finder(rekog_client, img_bytes, config):
+def person_of_interest_finder(rekog_client, img_bytes, config):
     rekog_search_face_response = rekog_client.search_faces_by_image(
         CollectionId=config['face_collection'],
         Image={
@@ -189,6 +187,10 @@ def person_finder(rekog_client, img_bytes, config):
         MaxFaces=config['search_max_faces'],
         FaceMatchThreshold=config['face_match_threshold']
     )
+
+    print('Total face Matches found = {}'.format(len(rekog_search_face_response['FaceMatches'])))
+    person_watch_list = config['person_watch_list']
+
     if len(rekog_search_face_response['FaceMatches']) > 0:
         print("found the person")
         for facematch in rekog_search_face_response['FaceMatches']:
@@ -198,13 +200,9 @@ def person_finder(rekog_client, img_bytes, config):
             print('Image Id {} from collection {}'.format(imgId, config['face_collection']))
             print('External Image Id {} from collection {}'.format(extImgId, config['face_collection']))
 
-            person_watch_list = config['person_watch_list']
-
             #Check if Human found is in the person watch list
-            if(extImgId.upper()
-               in (person.upper()
-               for person in person_watch_list)):
-                   return extImgId
+            if(extImgId.upper() in (person.upper() for person in person_watch_list)):
+                return extImgId
 
 
 def handler(event, context):
