@@ -65,7 +65,7 @@ def packagelambda(* functions):
     os.chdir("build")
 
     if(len(functions) == 0):
-        functions = ("framefetcher", "imageprocessor")
+        functions = ("framefetcher", "imageprocessor", "s3")
 
     for function in functions:
         print 'Packaging "%s" lambda function in directory' % function

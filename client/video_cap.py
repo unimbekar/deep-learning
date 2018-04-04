@@ -1,12 +1,11 @@
-import sys
 import cPickle
 import datetime
-import cv2
-import boto3
-import time
-import cPickle
-from multiprocessing import Pool
 import pytz
+import sys
+from multiprocessing import Pool
+
+import boto3
+import cv2
 
 kinesis_client = boto3.client("kinesis")
 rekog_client = boto3.client("rekognition")
@@ -71,7 +70,7 @@ def main():
     if argv_len > 1 and sys.argv[1].isdigit():
         capture_rate = int(sys.argv[1])
 
-    cap = cv2.VideoCapture(1) #Use 0 for built-in camera. Use 1, 2, etc. for attached cameras.
+    cap = cv2.VideoCapture(0) #Use 0 for built-in camera. Use 1, 2, etc. for attached cameras.
     pool = Pool(processes=3)
 
     frame_count = 0
