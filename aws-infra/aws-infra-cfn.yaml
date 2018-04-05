@@ -19,6 +19,11 @@ Parameters:
     MinLength: "1"
     Description: "Enter the name of the S3 key of Frame Fetcher lambda function .zip file."
 
+  S3ImageGetterSourceS3KeyParameter:
+    Type: String
+    MinLength: "1"
+    Description: "Enter the name of the S3 key of Image Getter lambda function .zip file."
+
   FrameFetcherLambdaFunctionName:
     Type: String
     Default: "framefetcher"
@@ -28,6 +33,11 @@ Parameters:
     Type: String
     Default: "imageprocessor"
     Description: "Name of the Lambda function that receives and processes frame images."
+
+  ImageGetterLambdaFunctionName:
+    Type: String
+    Default: "s3"
+    Description: "Name of the Lambda function that Gets Images from S3 and sends to Kinesis Stream."
 
   FrameFetcherApiResourcePathPart:
     Type: String
@@ -39,10 +49,16 @@ Parameters:
     Default: "FrameStream"
     Description: "Name of the Kinesis stream to receive frames from video capture client."
 
+
   FrameS3BucketNameParameter:
     Type: String
     MinLength: "1"
     Description: "Name of the S3 bucket for storage of captured frames."
+
+  ImageReKogS3BucketNameParameter:
+    Type: String
+    MinLength: "1"
+    Description: "Name of the S3 bucket for storage of Images to be Sent to Kinesis for Image Rekognition."
 
   DDBTableNameParameter:
     Type: String
@@ -75,6 +91,29 @@ Resources:
     Type: "AWS::S3::Bucket"
     Properties:
       BucketName: !Ref FrameS3BucketNameParameter
+
+  S3ImageGetterLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::721045248511:policy/AmazonKinesisFullAccess
+        - arn:aws:iam::721045248511:policy/AmazonRekognitionFullAccess
+        - arn:aws:iam::721045248511:policy/AmazonS3FullAccess
+        - arn:aws:iam::721045248511:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::721045248511:policy/AmazonSNSFullAccess
+        - arn:aws:iam::721045248511:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::721045248511:policy/AWSLambdaFullAccess
+      Path: "/"
+      RoleName: "S3ImageGetterLambdaExecutionRole"
 
   ImageProcessorLambdaExecutionRole:
     Type: "AWS::IAM::Role"
@@ -122,6 +161,50 @@ Resources:
     Properties:
       Name: !Ref KinesisStreamNameParameter
       ShardCount: 1
+
+  ImageRekogS3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref ImageReKogS3BucketNameParameter
+      NotificationConfiguration:
+        LambdaConfigurations:
+          -
+            Function: !GetAtt S3ImageGetterLambda.Arn
+            Event: "s3:ObjectCreated:Put"
+            Filter:
+              S3Key:
+                Rules:
+                  -
+                    Name: suffix
+                    Value: jpg
+    DependsOn:
+      - ImageRekogS3BucketPermission
+
+  ImageRekogS3BucketPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref S3ImageGetterLambda
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub "arn:aws:s3:::${ImageReKogS3BucketNameParameter}"
+
+  S3ImageGetterLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "s3imagegetter"
+      Description: "Function Gets the Posted Image from S3 Bucket And sends to Kinesis Stream"
+      Handler: "s3imagegetter.handler"
+      Role: !GetAtt S3ImageGetterLambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref SourceS3BucketParameter
+        S3Key: !Ref S3ImageGetterSourceS3KeyParameter
+      Timeout: 40 #seconds
+      MemorySize: 256 #MB
+      Runtime: python2.7
+    DependsOn:
+      - FrameStream
+      - S3ImageGetterLambdaExecutionRole
 
   ImageProcessorLambda:
     Type: AWS::Lambda::Function

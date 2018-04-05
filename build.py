@@ -65,7 +65,7 @@ def packagelambda(* functions):
     os.chdir("build")
 
     if(len(functions) == 0):
-        functions = ("framefetcher", "imageprocessor", "s3")
+        functions = ("framefetcher", "imageprocessor", "s3imagegetter")
 
     for function in functions:
         print 'Packaging "%s" lambda function in directory' % function
@@ -87,7 +87,7 @@ def updatelambda(*functions):
     lambda_client = boto3.client('lambda')
 
     if(len(functions) == 0):
-        functions = ("framefetcher", "imageprocessor")
+        functions = ("framefetcher", "imageprocessor", "s3imagegetter")
 
     for function in functions:
         with open('build/%s.zip' % (function), 'rb') as zipf:
@@ -104,7 +104,7 @@ def deploylambda(* functions, **kwargs):
     cfn_params_path = kwargs.get("cfn_params_path", "config/cfn-params.json")
 
     if(len(functions) == 0):
-        functions = ("framefetcher", "imageprocessor")
+        functions = ("framefetcher", "imageprocessor", "s3imagegetter")
 
     region_name = boto3.session.Session().region_name
     s3_keys = {}
@@ -113,6 +113,8 @@ def deploylambda(* functions, **kwargs):
     src_s3_bucket_name = cfn_params_dict["SourceS3BucketParameter"]
     s3_keys["framefetcher"] = cfn_params_dict["FrameFetcherSourceS3KeyParameter"]
     s3_keys["imageprocessor"] = cfn_params_dict["ImageProcessorSourceS3KeyParameter"]
+    s3_keys["s3imagegetter"] = cfn_params_dict["S3ImageGetterSourceS3KeyParameter"]
+
 
     s3_client = boto3.client("s3")
     
@@ -137,7 +139,7 @@ def deploylambda(* functions, **kwargs):
 
     for function in functions:
         
-        print "Uploading function '%s' to '%s'" % (function, s3_keys[function])
+        print "Uploading function '%s' to '%s'/'%s'" % (function, src_s3_bucket_name, s3_keys[function])
         
         with open('build/%s.zip' % (function), 'rb') as data:
             s3_client.upload_fileobj(data, src_s3_bucket_name, s3_keys[function])
@@ -271,6 +273,13 @@ def deletestack(** kwargs):
     
     s3 = boto3.resource('s3')
     s3.Bucket(frame_s3_bucket_name).objects.delete()
+
+    # Empty all objects in the Image Rekognition Bucket prior to deleting the stack.
+    image_rekog_s3_bucket_name = cfn_params_dict["ImageReKogS3BucketNameParameter"]
+    print("Attempting to DELETE ALL OBJECTS in '%s' bucket." % image_rekog_s3_bucket_name)
+
+    s3 = boto3.resource('s3')
+    s3.Bucket(image_rekog_s3_bucket_name).objects.delete()
 
     print("Attempting to DELETE '%s' stack using CloudFormation." % stack_name)
     start_t = time.time()
