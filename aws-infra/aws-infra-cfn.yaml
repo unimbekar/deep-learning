@@ -216,8 +216,8 @@ Resources:
       Code:
         S3Bucket: !Ref SourceS3BucketParameter
         S3Key: !Ref ImageProcessorSourceS3KeyParameter
-      Timeout: 40 #seconds
-      MemorySize: 128 #MB
+      Timeout: 300 #seconds
+      MemorySize: 256 #MB
       Runtime: python2.7
     DependsOn:
       - FrameStream

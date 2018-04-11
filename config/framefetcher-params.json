@@ -5,5 +5,5 @@
     "ddb_gsi_name"                 : "processed_year_month-processed_timestamp-index",
 
     "fetch_horizon_hrs"            : 1,
-    "fetch_limit"                  : 10
+    "fetch_limit"                  : 50
 }

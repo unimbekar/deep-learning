@@ -179,17 +179,14 @@ def convert_to_decimal(rekog_response):
         #print('Label: {}, Confidence: {}, Confidence(in Decimal): {}'.format(label['Name'], label['Confidence'], decimal.Decimal(label['Confidence'])))
 
 def person_of_interest_finder(rekog_client, img_bytes, config):
-    try:
-        rekog_search_face_response = rekog_client.search_faces_by_image(
-            CollectionId=config['face_collection'],
-            Image={
-                'Bytes': img_bytes
-            },
-            MaxFaces=config['search_max_faces'],
-            FaceMatchThreshold=config['face_match_threshold']
-        )
-    except Exception, e:
-        return False
+    rekog_search_face_response = rekog_client.search_faces_by_image(
+        CollectionId=config['face_collection'],
+        Image={
+            'Bytes': img_bytes
+        },
+        MaxFaces=config['search_max_faces'],
+        FaceMatchThreshold=config['face_match_threshold']
+    )
 
     print('Total face Matches found = {}'.format(len(rekog_search_face_response['FaceMatches'])))
     person_watch_list = config['person_watch_list']
@@ -206,8 +203,6 @@ def person_of_interest_finder(rekog_client, img_bytes, config):
             #Check if Human found is in the person watch list
             if(extImgId.upper() in (person.upper() for person in person_watch_list)):
                 return extImgId
-
-    return False
 
 
 def handler(event, context):
